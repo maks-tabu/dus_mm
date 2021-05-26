@@ -1,2 +1,3 @@
-rand_y.txt
+data/rand_y.txt
 .ipynb_checkpoints
+__pycache__

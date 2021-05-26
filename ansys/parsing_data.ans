@@ -1,0 +1,269 @@
+
+finish
+/clear
+
+/inp,'number.txt'
+numb = numb + 1
+/output,number,txt, , 
+*vwrite,numb
+('numb = ', f10.0)
+/output
+
+/output,data_output%numb%,txt, ,
+/com, Ax   Bx   By   Cy   Cx   Dx   Dy   Ay   AQ   AL   BQ   BL   CQ   CL   DQ   DL  
+/output
+
+/output,data_input%numb%,txt, , 
+/com, frez       Ax       Bx       By       Cy       Cx      Dx        Dy       Ay
+/output
+
+/filname,dus-2x
+/title,DUS-2X
+*afun,deg
+/cwd,'d:\Ansys\wb'
+dp = 'ans\parsing_data.ans'
+~parain,DUS-MM_for_parsing,x_t,D:\Ansys\Input\,all !DUS_2tr6 
+allsel
+
+/prep7
+et,1,plane183 ! or plane182
+type,1
+keyopt,1,3,3
+keyopt,1,1,0
+r,1,0.3            !Thickness, mm
+
+mp,ex,  1,1.295e+11
+mp,prxy,1,0.3
+mp,dens,1,2328
+
+mp,ex,  2,1.295e+11
+mp,prxy,2,0.3
+mp,dens,2,1
+
+mp,ex,  3,1.295e+11
+mp,prxy,3,0.3
+mp,dens,3,1675
+
+mp,ex,  4,1.295e+11
+mp,prxy,4,0.3
+mp,dens,4,2328
+
+Zad_centr = 0.85e-3
+Zad_ugl = 1.24e-3
+Zad_bok = 1.24e-3
+Do_Zad_centr = 0.775e-3
+Do_Zad_ugl = 10.76e-3
+Do_Zad_bok_x = 10.76e-3
+Do_Zad_bok_y = 3.79e-3
+
+aglue,all
+asel,s,area,,119,122,1
+mat,1
+mshkey,0
+mshape,0,2D
+aesize,all,0.5e-4
+amesh,all
+
+allsel
+asel,u,area,,119,122,1
+aesize,all,1e-4
+amesh,all
+ 
+allsel
+eplot
+local,12,0, , , ,45
+arsym,Y,all, , , ,0,0
+
+csys,0
+allsel
+arsym,Y,all, , , ,0,0
+allsel
+arsym,X,all, , , ,0,0
+allsel
+nummrg,node,1e-8
+
+clocal,13,0, , , ,0
+*do,i,1,4
+nsel,s,loc,x,Do_Zad_centr,Do_Zad_centr+Zad_centr
+nsel,r,loc,y,Do_Zad_centr,Do_Zad_centr+Zad_centr
+d,all,all,0
+nsel,s,loc,x,Do_Zad_ugl,Do_Zad_ugl+Zad_ugl
+nsel,r,loc,y,Do_Zad_ugl,Do_Zad_ugl+Zad_ugl
+d,all,all,0
+nsel,s,loc,x,Do_Zad_bok_x,Do_Zad_bok_x+Zad_bok
+nsel,r,loc,y,Do_Zad_bok_y,Do_Zad_bok_y+Zad_bok
+d,all,all,0
+nsel,s,loc,x,Do_Zad_bok_y,Do_Zad_bok_y+Zad_bok
+nsel,r,loc,y,Do_Zad_bok_x,Do_Zad_bok_x+Zad_bok
+d,all,all,0
+clocal,(13+i),0, , , ,90
+*enddo
+
+do_PU_centr = 5e-3  
+X1 = 3.91e-3
+X2 = 4.61e-3
+Y1 = 0.075e-3
+Y2 = 0.485e-3
+Y3 = 2.49e-3
+Y4 = 2.9e-3
+*dim,index1,char,16
+*dim,index2,char,16
+*dim,index3,char,16
+*dim,index4,char,16
+index1(1) = 'AX1','AY1','AX2','AY2','AX3','AY3','AX4','AY4','AL1','AQ1','AL2','AQ2','AQ3','AL3','AQ4','AL4'
+index2(1) = 'BY1','BX1','BY2','BX2','BY3','BX3','BY4','BX4','BL1','BQ1','BL2','BQ2','BQ3','BL3','BQ4','BL4'
+index3(1) = 'CX1','CY1','CX2','CY2','CX3','CY3','CX4','CY4','CL1','CQ1','CL2','CQ2','CQ3','CL3','CQ4','CL4'
+index4(1) = 'DY1','DX1','DY2','DX2','DY3','DX3','DY4','DX4','DL1','DQ1','DL2','DQ2','DQ3','DL3','DQ4','DL4'
+
+
+*do,i,1,4
+	csys,(12+i)
+	clocal,(10*i+10),0,do_PU_centr,do_PU_centr
+	*do,j,1,8
+		II = index%i%(j)
+		asel,s,loc,Y,Y1,Y2
+		asel,r,loc,X,X1,X2
+		CM,II,AREA
+		CMSEL,A,II
+		
+		III = index%i%(j+8)
+		asel,s,loc,Y,Y3,Y4
+		asel,r,loc,X,X1,X2
+		CM,III,AREA
+		CMSEL,A,III
+		
+		*if,j,ne,4,then
+			clocal,(10*i+10+j),0, , , ,90
+		*else
+			clocal,(10*i+10+j),0, , , ,90,180		
+		*endif
+	*enddo
+*enddo
+allsel
+csys,0
+
+CMGRP,Ax,AX1,AX2,AX3,AX4
+CMGRP,Ay,AY1,AY2,AY3,AY4
+CMGRP,A_Q,AQ1,AQ2,AQ3,AQ4
+CMGRP,A_L,AL1,AL2,AL3,AL4
+
+CMGRP,Bx,BX1,BX2,BX3,BX4
+CMGRP,By,BY1,BY2,BY3,BY4
+CMGRP,B_Q,BQ1,BQ2,BQ3,BQ4
+CMGRP,B_L,BL1,BL2,BL3,BL4
+
+CMGRP,Cx,CX1,CX2,CX3,CX4
+CMGRP,Cy,CY1,CY2,CY3,CY4
+CMGRP,C_Q,CQ1,CQ2,CQ3,CQ4
+CMGRP,C_L,CL1,CL2,CL3,CL4
+
+CMGRP,Dx,DX1,DX2,DX3,DX4
+CMGRP,Dy,DY1,DY2,DY3,DY4
+CMGRP,D_Q,DQ1,DQ2,DQ3,DQ4
+CMGRP,D_L,DL1,DL2,DL3,DL4
+
+
+CMGRP,DUS,Ax,Bx,By,Cy,Cx,Dx,Dy,Ay
+CMEDIT,DUS,ADD,C_Q,C_L,D_Q,D_L,A_Q,A_L,B_Q 
+CMEDIT,DUS,ADD,B_L 
+
+nuz = 16  !Количество балансировочных узлов
+nelem = 28  !Количество балансирвочных элементов
+*dim,area_sel,array,nelem
+*dim,ind,char,64
+*dim,numb_dele,array,nuz !Количество удаляемых балансировочных элементов
+*dim,node_for,array,1,4
+*dim,disp,array,8
+ind(1) = 'Ax','Bx','By','Cy','Cx','Dx','Dy','Ay','A_Q', 'A_L', 'B_Q', 'B_L', 'C_Q', 'C_L', 'D_Q', 'D_L' 
+
+
+*do,m,1,10000 
+allsel
+finish
+
+/prep7
+asel,s,area,,DUS
+esla,s
+mpchg,2,all
+
+/inp,'index.txt'
+/input,'rand_y.txt',,,index
+
+index = index + 2
+/output,index,txt, , 
+*vwrite,index
+('index = ', f10.0)
+/output
+
+*do, i, 1, nuz, 1	
+	cel = nint(numb_dele(i)/4-0.5)
+	ost = numb_dele(i) - cel*4
+	*do,k,1,4,1
+		ostp = 0	
+		*if,ost,ne,0,then
+			ost = ost - 1
+			ostp = 1
+		*endif
+		*get,part,comp,ind(i),sname,k	
+		asel,s, , ,part
+		*vget, area_sel, area, , alist
+		*if,(ostp + cel),ne,0,then
+			*do, j, 1, (ostp + cel), 1
+				asel,u,area, ,area_sel(j)	
+			*enddo
+				asel,inve
+				asel,r, , ,part
+				esla,s
+				*if,i,ge,9,then
+					mpchg,4,all
+				*else
+					mpchg,3,all	
+				*endif
+		*endif
+	*enddo	
+*enddo
+
+allsel
+/output,data_output%numb%,txt, ,append
+*vwrite,numb_dele(1),numb_dele(2),numb_dele(3),numb_dele(4),numb_dele(5),numb_dele(6),numb_dele(7),numb_dele(8),numb_dele(9),numb_dele(10),numb_dele(11),numb_dele(12),numb_dele(13),numb_dele(14),numb_dele(15),numb_dele(16)
+(F4.0,'  ',F3.0,' ',F4.0,' ',F4.0,' ',F4.0,'  ',F4.0,' ',F4.0,' ',F4.0,' ',F4.0,' ',F4.0,' ',F4.0,' ',F4.0,' ',F4.0,' ',F4.0,' ',F4.0,' ',F4.0,' ')
+/output
+
+
+/solu
+bcsoption, ,minimum
+antype,modal
+modopt,lanb,4,4100,4400
+mxpand,4, , ,yes!%mod_exp2%
+
+allsel
+solve
+save
+finish
+
+/post1
+*do,i,1,4
+	csys,(12+i)
+	nsel,s,loc,x,4.99e-3,5.01e-3
+	nsel,r,loc,y,4.99e-3,5.01e-3
+	*get,node_for(1,i),node,0,num,max
+*enddo
+csys,0
+
+*do,i,1,4
+	set,1,i
+	*get,fr,active,0,set,freq
+	*do,j,1,4
+		nsel,s,node,,node_for(1,j)
+		prnsol,U,X
+		*get,disp(j),node,node_for(1,j),U,X
+		prnsol,U,Y
+		*get,disp(4+j),node,node_for(1,j),U,Y
+	*enddo
+/output,data_input%numb%,txt, ,append 
+*vwrite,fr,disp(1),disp(2),disp(6),disp(7),disp(3),disp(4),disp(8),disp(5)
+(F8.3,' ',F8.3,' ',F8.3,' ',F8.3,' ',F8.3,' ',F8.3,' ',F8.3,' ',F8.3,' ',F8.3,' ') 
+/output
+*enddo
+
+*enddo
