@@ -136,8 +136,7 @@ def init_in(X):
     for i in range(len(X.groupby(level=0))):
         a = np.argmax(np.abs(np.array(X.loc[i])@mode.T), axis = 0) + 1
         if a[3] != 4:
-            print(i)
-            #raise Exception('4 мода не соответствует')
+            raise Exception('4 мода не соответствует')
             
     pairs = {'AXBX':['AX','BX'],'BYCY':['BY','CY'],'CXDX':['CX','DX'],'DYAY':['DY','AY']}
     X = np.abs(X)
