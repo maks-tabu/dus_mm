@@ -146,9 +146,7 @@ def init_in(X):
     X = X.divide(maxval, axis = 0, level=1)
     X = X.round(3)
     
-    X.insert(0,'freq', X_freq)
-    freq4 = (X.index.get_level_values(1) == 4)
-    X.loc[freq4,'freq'] = X.loc[freq4,'freq'] - 18.56    
+    X.insert(0,'freq', X_freq)   
     X  = X.groupby(level = 'number').apply(norm_freq)
     
     new_X = pd.DataFrame()
