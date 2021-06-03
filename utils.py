@@ -80,7 +80,10 @@ def decomposition(out_y):
     out_y = out_y.drop(columns = ['AXBX','CXDX','BYCY','DYAY','A','B','C','D','del'])
     return out_y
 
-def integration(out_y):
+def integration(out_y, koefXY = 1, koefQL = 1):
+    rounding = 0
+    if koefXY != 1:
+      rounding = 2  
     pairs = {'AXBX':['AX','BX'],'BYCY':['BY','CY'],'CXDX':['CX','DX'],'DYAY':['DY','AY']}
     directXY = {'X': ['AXBX','CXDX'],'Y': ['BYCY','DYAY']}
     directQL_sum = {'Q': ['AQ','CQ','BL','DL'],'L':['AL','CL','BQ','DQ']}
@@ -91,17 +94,19 @@ def integration(out_y):
     out_y = out_y.apply(forward, **massQL, axis = 1)
     out_y = out_y.apply(backprop, **directXY, axis = 1)
     out_y = out_y.apply(backprop, **directQL_sum, axis = 1)
-    out_y = out_y.round()
+    out_y = out_y.round(rounding)
     out_y = out_y.apply(backprop, **massXY, axis = 1)
-    out_y = out_y.round()
+    out_y = out_y.round(rounding)
     out_y = out_y.apply(backprop, **pairs, axis = 1)
     out_y = out_y[['AX','BX','BY','CY','CX','DX','DY','AY','AQ','AL','BQ','BL','CQ','CL','DQ','DL']]
     out_y = out_y.apply(round_to_int, **pairs, axis = 1)
-    out_y = np.round(out_y)
+    out_y = out_y.round(rounding)
     numb = np.where(out_y>28)[0]
     numb = np.unique(numb)
-    out_y = out_y.drop(numb)
+    #out_y = out_y.drop(numb)
     out_y = out_y.reset_index(drop=True)
+    out_y.iloc[:,:8] = koefXY*out_y.iloc[:,:8]
+    out_y.iloc[:,8:] = koefQL*out_y.iloc[:,8:]
     return out_y
 
 def create_out(len_out: int = 100):
@@ -128,15 +133,16 @@ def init_in(X):
     mInd = pd.MultiIndex.from_arrays([ind1_list, ind2_list], names=('number', 'mode'))
     X.index = mInd
     
-    mode = np.array([[1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0],
-                     [-1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0],
-                     [1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0],
-                     [1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0]])
+    # mode = np.array([[1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0],
+                    #  [-1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0],
+                    #  [1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0],
+                    #  [1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0]])
     X_freq = X.pop('freq')
-    for i in range(len(X.groupby(level=0))):
-        a = np.argmax(np.abs(np.array(X.loc[i])@mode.T), axis = 0) + 1
-        if a[3] != 4:
-            raise Exception('4 мода не соответствует')
+    # ind = []
+    # for i in range(len(X.groupby(level=0))):
+    #     a = np.argmax(np.abs(np.array(X.loc[i])@mode.T), axis = 0) + 1 
+    #     if a[3] != 4:
+    #         raise Exception('4 мода не соответствует')
             
     pairs = {'AXBX':['AX','BX'],'BYCY':['BY','CY'],'CXDX':['CX','DX'],'DYAY':['DY','AY']}
     X = np.abs(X)
@@ -145,6 +151,8 @@ def init_in(X):
     maxval = np.max(X, axis = 1)
     X = X.divide(maxval, axis = 0, level=1)
     X = X.round(3)
+    for col_name in X.columns:
+      X[col_name][X[col_name] < 0.2] = 0
     
     X.insert(0,'freq', X_freq)   
     X  = X.groupby(level = 'number').apply(norm_freq)
@@ -154,6 +162,7 @@ def init_in(X):
     for idx, mode in enumerate(X.groupby(['mode'])):
         col = {key: key + str(idx+1)  for key in colX}
         new_X = pd.concat([new_X, pd.DataFrame(mode[1]).droplevel(1).rename(columns = col)] , axis = 1) 
+    new_X = new_X.drop(columns = ['freq1','freq4'])
     return new_X
 
 def norm_freq(x): 
