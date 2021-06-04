@@ -110,7 +110,8 @@ def integration(out_y, koefXY = 1, koefQL = 1):
     return out_y
 
 def create_out(len_out: int = 100):
-    in_y = np.abs(np.random.normal(0,10, size = (len_out,16)))
+    in_y = np.random.uniform(0, 28, [len_out,16])
+    #in_y = np.abs(np.random.normal(0,10, size = (len_out,16)))
     in_y = in_y.round(0)
     in_y[in_y > 28] = 28
     columns_y = ['AX', 'BX', 'BY', 'CY', 'CX', 'DX', 'DY', 'AY', 'AQ', 'AL', 'BQ', 'BL', 'CQ', 'CL', 'DQ', 'DL']
