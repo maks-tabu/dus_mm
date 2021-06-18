@@ -152,8 +152,8 @@ def init_in(X):
     maxval = np.max(X, axis = 1)
     X = X.divide(maxval, axis = 0, level=1)
     X = X.round(3)
-    for col_name in X.columns:
-      X[col_name][X[col_name] < 0.2] = 0
+    #for col_name in X.columns:
+    #  X[col_name][X[col_name] < 0.2] = 0
     
     X.insert(0,'freq', X_freq)   
     X  = X.groupby(level = 'number').apply(norm_freq)
