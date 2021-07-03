@@ -165,6 +165,11 @@ def init_in(X, freq_bias):
         col = {key: key + str(idx+1)  for key in colX}
         new_X = pd.concat([new_X, pd.DataFrame(mode[1]).droplevel(1).rename(columns = col)] , axis = 1) 
     #new_X = new_X.drop(columns = ['freq1','freq4'])
+    if (nmode == 8):
+        directXY = {'X2': ['AXBX2','CXDX2'],'Y2': ['BYCY2','DYAY2'],'X3': ['AXBX3','CXDX3'],'Y3': ['BYCY3','DYAY3']}
+        mergeX = {'X':['X2','Y3'],'Y':['Y2','X3']}
+        new_X = add_pairs(new_X, **directXY)/2
+        new_X = add_pairs(new_X, **mergeX)/2
     return new_X
 
 def norm_freq(x, freq_bias): 
