@@ -80,10 +80,10 @@ def decomposition(out_y):
     out_y = out_y.drop(columns = ['AXBX','CXDX','BYCY','DYAY','A','B','C','D','del'])
     return out_y
 
-def integration(out_y, koefXY = 1, koefQL = 1):
+def integration(out_y, nelem, koefXY = 1, koefQL = 1):
     rounding = 0
     if koefXY != 1:
-      rounding = 2  
+        rounding = 2  
     pairs = {'AXBX':['AX','BX'],'BYCY':['BY','CY'],'CXDX':['CX','DX'],'DYAY':['DY','AY']}
     directXY = {'X': ['AXBX','CXDX'],'Y': ['BYCY','DYAY']}
     directQL_sum = {'Q': ['AQ','CQ','BL','DL'],'L':['AL','CL','BQ','DQ']}
@@ -101,7 +101,7 @@ def integration(out_y, koefXY = 1, koefQL = 1):
     out_y = out_y[['AX','BX','BY','CY','CX','DX','DY','AY','AQ','AL','BQ','BL','CQ','CL','DQ','DL']]
     out_y = out_y.apply(round_to_int, **pairs, axis = 1)
     out_y = out_y.round(rounding)
-    numb = np.where(out_y>28)[0]
+    numb = np.where(out_y>nelem)[0]
     numb = np.unique(numb)
     #out_y = out_y.drop(numb)
     out_y = out_y.reset_index(drop=True)
@@ -125,12 +125,13 @@ def create_out(len_out: int = 100):
     out_y.to_csv('rand_y.txt',index = False, index_label = False)
     return in_y
 
-def init_in(X):
+def init_in(X, freq_bias):
+    nmode = len(freq_bias) 
     ind1_list = []
     ind2_list = []
     for i in range(X.shape[0]):
-        ind1_list.append(i//4) 
-        ind2_list.append(i%4+1)
+        ind1_list.append(i//nmode) 
+        ind2_list.append(i%nmode+1)
     mInd = pd.MultiIndex.from_arrays([ind1_list, ind2_list], names=('number', 'mode'))
     X.index = mInd
     
@@ -152,21 +153,27 @@ def init_in(X):
     maxval = np.max(X, axis = 1)
     X = X.divide(maxval, axis = 0, level=1)
     X = X.round(3)
-    for col_name in X.columns:
-      X[col_name][X[col_name] < 0.2] = 0
+    #for col_name in X.columns:
+    #  X[col_name][X[col_name] < 0.2] = 0
     
-    X.insert(0,'freq', X_freq)   
-    X  = X.groupby(level = 'number').apply(norm_freq)
+    X.insert(0,'freq', X_freq) 
+    X  = X.groupby(level = 'number').apply(norm_freq, freq_bias)
     
     new_X = pd.DataFrame()
     colX = X.columns
     for idx, mode in enumerate(X.groupby(['mode'])):
         col = {key: key + str(idx+1)  for key in colX}
         new_X = pd.concat([new_X, pd.DataFrame(mode[1]).droplevel(1).rename(columns = col)] , axis = 1) 
-    new_X = new_X.drop(columns = ['freq1','freq4'])
+    #new_X = new_X.drop(columns = ['freq1','freq4'])
+    if (nmode == 8):
+        directXY = {'X2': ['AXBX2','CXDX2'],'Y2': ['BYCY2','DYAY2'],'X3': ['AXBX3','CXDX3'],'Y3': ['BYCY3','DYAY3']}
+        mergeX = {'X':['X2','Y3'],'Y':['Y2','X3']}
+        new_X = add_pairs(new_X, **directXY)/2
+        new_X = add_pairs(new_X, **mergeX)/2
     return new_X
 
-def norm_freq(x): 
+def norm_freq(x, freq_bias): 
+    x['freq'] = x['freq'] + freq_bias
     f_deltamin = x['freq'] - np.min(x['freq'])
     f_norm = f_deltamin/np.max(f_deltamin)
     x['freq'] = f_norm.round(3)
