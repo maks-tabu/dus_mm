@@ -125,7 +125,22 @@ def create_out(len_out: int = 100):
     out_y.to_csv('rand_y.txt',index = False, index_label = False)
     return in_y
 
-def init_in(X, freq_bias):
+def add_phase(x, **kwargs):
+    for key in kwargs.keys():
+        values = kwargs[key]
+        dir1 = values[0]
+        dir2 = values[1]
+        if x[dir2] == 0:
+            x[key] = 0
+        elif x[dir1] == 0:
+            x[key] = 0.5
+        elif (np.sign(x[dir1]) == np.sign(x[dir2])):
+            x[key] = np.arctan(x[dir2]/x[dir1])/(np.pi)
+        elif (np.sign(x[dir1]) != np.sign(x[dir2])):
+            x[key] = 1 -  np.arctan(np.abs(x[dir2]/x[dir1]))/(np.pi)
+    return x
+
+def init_in(X, freq_bias):  
     nmode = len(freq_bias) 
     ind1_list = []
     ind2_list = []
@@ -135,28 +150,20 @@ def init_in(X, freq_bias):
     mInd = pd.MultiIndex.from_arrays([ind1_list, ind2_list], names=('number', 'mode'))
     X.index = mInd
     
-    # mode = np.array([[1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0],
-                    #  [-1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0],
-                    #  [1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0],
-                    #  [1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0]])
-    X_freq = X.pop('freq')
-    # ind = []
-    # for i in range(len(X.groupby(level=0))):
-    #     a = np.argmax(np.abs(np.array(X.loc[i])@mode.T), axis = 0) + 1 
-    #     if a[3] != 4:
-    #         raise Exception('4 мода не соответствует')
-            
+    phase = {'phaseA':['AX','AY'],'phaseB':['BX','BY'],'phaseC':['CX','CY'],'phaseD':['DX','DY']}
+    X = X.apply(add_phase, **phase, axis = 1)
+    
     pairs = {'AXBX':['AX','BX'],'BYCY':['BY','CY'],'CXDX':['CX','DX'],'DYAY':['DY','AY']}
     X = np.abs(X)
-    X = add_pairs(X, **pairs)/2 
+    X = add_pairs(X, **pairs)
     
-    maxval = np.max(X, axis = 1)
-    X = X.divide(maxval, axis = 0, level=1)
+    pairs_keys = ['AXBX','BYCY','CXDX','DYAY']
+    maxval = np.max(X[pairs_keys], axis = 1)
+    X[pairs_keys] = X[pairs_keys].divide(maxval, axis = 0, level=1)
     X = X.round(3)
     #for col_name in X.columns:
     #  X[col_name][X[col_name] < 0.2] = 0
     
-    X.insert(0,'freq', X_freq) 
     X  = X.groupby(level = 'number').apply(norm_freq, freq_bias)
     
     new_X = pd.DataFrame()
@@ -164,6 +171,7 @@ def init_in(X, freq_bias):
     for idx, mode in enumerate(X.groupby(['mode'])):
         col = {key: key + str(idx+1)  for key in colX}
         new_X = pd.concat([new_X, pd.DataFrame(mode[1]).droplevel(1).rename(columns = col)] , axis = 1) 
+
     #new_X = new_X.drop(columns = ['freq1','freq4'])
 #     if (nmode == 8):
 #         directXY = {'X2': ['AXBX2','CXDX2'],'Y2': ['BYCY2','DYAY2'],'X3': ['AXBX3','CXDX3'],'Y3': ['BYCY3','DYAY3']}
