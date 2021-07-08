@@ -130,14 +130,12 @@ def add_phase(x, **kwargs):
         values = kwargs[key]
         dir1 = values[0]
         dir2 = values[1]
-        if x[dir2] == 0:
-            x[key] = 0
-        elif x[dir1] == 0:
+        if x[dir2] == 0 or x[dir1] == 0:
             x[key] = 0.5
         elif (np.sign(x[dir1]) == np.sign(x[dir2])):
-            x[key] = np.arctan(x[dir2]/x[dir1])/(np.pi)
+            x[key] = np.sin(np.arctan(x[dir2]/x[dir1]) * 1.33 + 0.523)
         elif (np.sign(x[dir1]) != np.sign(x[dir2])):
-            x[key] = 1 -  np.arctan(np.abs(x[dir2]/x[dir1]))/(np.pi)
+            x[key] = 1 -  np.sin(np.arctan(np.abs(x[dir2]/x[dir1])) * 1.33 + 0.523)
     return x
 
 def init_in(X, freq_bias):  
@@ -164,14 +162,25 @@ def init_in(X, freq_bias):
     #for col_name in X.columns:
     #  X[col_name][X[col_name] < 0.2] = 0
     
-    X  = X.groupby(level = 'number').apply(norm_freq, freq_bias)
+    #X  = X.groupby(level = 'number').apply(norm_freq, freq_bias)
     
+
     new_X = pd.DataFrame()
     colX = X.columns
     for idx, mode in enumerate(X.groupby(['mode'])):
         col = {key: key + str(idx+1)  for key in colX}
         new_X = pd.concat([new_X, pd.DataFrame(mode[1]).droplevel(1).rename(columns = col)] , axis = 1) 
-
+    
+    for i in range(1, len(freq_bias) + 7):
+        new_X['freq'+ str(8 + i)] = new_X['freq'+ str(i + 1)] - new_X['freq'+ str(i)] 
+    
+    for i in range(1, len(freq_bias) + 7):
+        name = 'freq' + str(i + 1)
+        if i < 9:
+            new_X[name] = new_X[name] - new_X['freq1']
+        new_X[name] = (new_X[name] - new_X[name].min())/(new_X[name].max() - new_X[name].min())
+    new_X = new_X.drop(columns = ['freq1'])
+    new_X = new_X.round(3)
     #new_X = new_X.drop(columns = ['freq1','freq4'])
 #     if (nmode == 8):
 #         directXY = {'X2': ['AXBX2','CXDX2'],'Y2': ['BYCY2','DYAY2'],'X3': ['AXBX3','CXDX3'],'Y3': ['BYCY3','DYAY3']}
